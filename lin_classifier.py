@@ -19,6 +19,14 @@ def pred_log(logreg, X_train, y_train, X_test, flag=False):
     :return: A two elements tuple containing the predictions and the weightning matrix
     """
     # ------------------ IMPLEMENT YOUR CODE HERE:-----------------------------
+    model= logreg
+    model.fit(X_train, y_train) #training the model- now we can create predictions
+    y_pred_log = {}
+    y_pred_log=  model.predict(X_test) #predicting the outcome= the classification 
+    w_log= model.coef_ #returns the weight (the coef) 
+    
+    if flag==1: #True
+        y_pred_log=model.predict_proba(X_test) #requiered for Q11
 
     # -------------------------------------------------------------------------
     return y_pred_log, w_log
@@ -75,6 +83,8 @@ def cv_kfold(X, y, C, penalty, K, mode):
     """
     kf = SKFold(n_splits=K)
     validation_dict = []
+    temp_dict = {}
+
     for c in C:
         for p in penalty:
             logreg = LogisticRegression(solver='saga', penalty=p, C=c, max_iter=10000, multi_class='ovr')
@@ -83,7 +93,15 @@ def cv_kfold(X, y, C, penalty, K, mode):
             for train_idx, val_idx in kf.split(X, y):
                 x_train, x_val = X.iloc[train_idx], X.iloc[val_idx]
         # ------------------ IMPLEMENT YOUR CODE HERE:-----------------------------
-
+                y_pred, _ = pred_log(logreg,nsd(x_train,mode=mode,flag=False), y[train_idx], nsd(x_val,mode=mode,flag=False), flag = True)
+                loss_val_vec[k] = log_loss(y[val_idx],y_pred)
+                k+=1       
+            temp_dict['C'] = c
+            temp_dict['penalty'] = p  
+            temp_dict['mu'] = loss_val_vec.mean()
+            temp_dict['sigma'] = loss_val_vec.std() 
+            validation_dict.append(temp_dict)
+            temp_dict = {}
         # --------------------------------------------------------------------------
     return validation_dict
 
@@ -98,7 +116,13 @@ def odds_ratio(w, X, selected_feat='LB'):
              odds_ratio: the odds ratio of the selected feature and label
     """
     # ------------------ IMPLEMENT YOUR CODE HERE:-----------------------------
-
+    ind=X.columns.get_loc(selected_feat)
+    temp_feat=w[0,ind]
+    odd_ratio=np.exp(temp_feat)
+    X_tran=np.transpose(X)
+    w_temp=w[0,:].reshape(1,20)
+    odds=np.median(np.exp(w_temp@X_tran))
+    
     # --------------------------------------------------------------------------
 
     return odds, odd_ratio
